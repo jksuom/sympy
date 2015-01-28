@@ -1,7 +1,7 @@
 from sympy import (
-    Abs, acos, acosh, Add, asin, asinh, atan, Ci, cos, sinh, cosh,
-    Derivative, diff, DiracDelta, E, exp, erf, erfi, EulerGamma, factor, Function,
-    I, Integral, integrate, Interval, Lambda, LambertW, log,
+    Abs, acos, acosh, Add, asin, asinh, atan, Ci, cos, sinh, cosh, tanh,
+    Derivative, diff, DiracDelta, E, exp, erf, erfi, EulerGamma, factor,
+    Function, I, Integral, integrate, Interval, Lambda, LambertW, log,
     Matrix, O, oo, pi, Piecewise, Poly, Rational, S, simplify, sin, tan, sqrt,
     sstr, Sum, Symbol, symbols, sympify, trigsimp,
     Tuple, nan, And, Eq, Ne, re, im
@@ -1078,4 +1078,4 @@ def test_issue_8368():
 
 def test_issue_8901():
     assert integrate(sinh(1.0*x)) == 1.0*cosh(1.0*x)
-    assert integrate(tanh(1.0*x)) == 1.0*x - 1.0*log(tanh(1.0*x) + 1)
+    assert integrate(tanh(1.0*x)) == -1.0*x - 1.0*log(tanh(1.0*x) - 1)
