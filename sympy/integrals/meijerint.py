@@ -37,7 +37,8 @@ from sympy.simplify import hyperexpand, powdenest
 from sympy.logic.boolalg import And, Or, BooleanAtom
 from sympy.functions.special.delta_functions import Heaviside
 from sympy.functions.elementary.piecewise import Piecewise
-from sympy.functions.elementary.hyperbolic import _rewrite_hyperbolics_as_exp
+from sympy.functions.elementary.hyperbolic import \
+    _rewrite_hyperbolics_as_exp, HyperbolicFunction
 from sympy.functions.special.hyper import meijerg
 from sympy.utilities.iterables import multiset_partitions, ordered
 from sympy.utilities.misc import debug as _debug
@@ -1551,7 +1552,7 @@ def _rewrite2(f, x):
                     return fac, po, g1[0], g2[0], cond
 
 
-def meijerint_indefinite(f, x):
+def meijerint_indefinite(f, x, rewrite=True):
     """
     Compute an indefinite integral of ``f`` by rewriting it as a G function.
 
@@ -1565,7 +1566,7 @@ def meijerint_indefinite(f, x):
     -cos(x)
     """
     from sympy import hyper, meijerg
-    f = _rewrite_hyperbolics_as_exp(f)
+
     results = []
     for a in sorted(_find_splitting_points(f, x) | set([S(0)]), key=default_sort_key):
         res = _meijerint_indefinite_1(f.subs(x, x + a), x)
@@ -1576,6 +1577,10 @@ def meijerint_indefinite(f, x):
             return results[-1]
     if results:
         return next(ordered(results))
+    if rewrite and f.has(HyperbolicFunction):
+        _debug('Try rewriting hyperbolics in terms of exp.')
+        return meijerint_indefinite(
+            _rewrite_hyperbolics_as_exp(f), x, rewrite=False)
 
 
 def _meijerint_indefinite_1(f, x):
@@ -1662,7 +1667,7 @@ def _meijerint_indefinite_1(f, x):
 
 
 @timeit
-def meijerint_definite(f, x, a, b):
+def meijerint_definite(f, x, a, b, rewrite=True):
     """
     Integrate ``f`` over the interval [``a``, ``b``], by rewriting it as a product
     of two G functions, or as a single G function.
@@ -1700,8 +1705,6 @@ def meijerint_definite(f, x, a, b):
 
     f_, x_, a_, b_ = f, x, a, b
 
-    f = _rewrite_hyperbolics_as_exp(f)
-
     # Let's use a dummy in case any of the boundaries has x.
     d = Dummy('x')
     f = f.subs(x, d)
@@ -1713,7 +1716,7 @@ def meijerint_definite(f, x, a, b):
     if a == -oo and b != oo:
         return meijerint_definite(f.subs(x, -x), x, -b, -a)
 
-    if a == -oo:
+    elif a == -oo:
         # Integrating -oo to oo. We need to find a place to split the integral.
         _debug('  Integrating -oo to +oo.')
         innermost = _find_splitting_points(f, x)
@@ -1739,50 +1742,54 @@ def meijerint_definite(f, x, a, b):
                 continue
             res = res1 + res2
             return res, cond
-        return
 
-    if a == oo:
+    elif a == oo:
         return -meijerint_definite(f, x, b, oo)
 
-    if (a, b) == (0, oo):
+    elif (a, b) == (0, oo):
         # This is a common case - try it directly first.
         res = _meijerint_definite_2(f, x)
         if res is not None and not res[0].has(meijerg):
             return res
 
-    results = []
-    if b == oo:
-        for split in _find_splitting_points(f, x):
-            if (a - split >= 0) == True:
-                _debug('Trying x --> x + %s' % split)
-                res = _meijerint_definite_2(f.subs(x, x + split)
-                                            *Heaviside(x + split - a), x)
-                if res is not None:
-                    if res[0].has(meijerg):
-                        results.append(res)
-                    else:
-                        return res
+    else:
+        results = []
+        if b == oo:
+            for split in _find_splitting_points(f, x):
+                if (a - split >= 0) == True:
+                    _debug('Trying x --> x + %s' % split)
+                    res = _meijerint_definite_2(f.subs(x, x + split)
+                                                *Heaviside(x + split - a), x)
+                    if res is not None:
+                        if res[0].has(meijerg):
+                            results.append(res)
+                        else:
+                            return res
 
-    f = f.subs(x, x + a)
-    b = b - a
-    a = 0
-    if b != oo:
-        phi = exp(I*arg(b))
-        b = abs(b)
-        f = f.subs(x, phi*x)
-        f *= Heaviside(b - x)*phi
-        b = oo
+        f = f.subs(x, x + a)
+        b = b - a
+        a = 0
+        if b != oo:
+            phi = exp(I*arg(b))
+            b = abs(b)
+            f = f.subs(x, phi*x)
+            f *= Heaviside(b - x)*phi
+            b = oo
 
-    _debug('Changed limits to', a, b)
-    _debug('Changed function to', f)
-    res = _meijerint_definite_2(f, x)
-    if res is not None:
-        if res[0].has(meijerg):
-            results.append(res)
-        else:
-            return res
-    if results:
-        return sorted(results, key=lambda x: count_ops(x[0]))[0]
+        _debug('Changed limits to', a, b)
+        _debug('Changed function to', f)
+        res = _meijerint_definite_2(f, x)
+        if res is not None:
+            if res[0].has(meijerg):
+                results.append(res)
+            else:
+                return res
+        if results:
+            return sorted(results, key=lambda x: count_ops(x[0]))[0]
+    if rewrite and f_.has(HyperbolicFunction):
+        _debug('Try rewriting hyperbolics in terms of exp.')
+        return meijerint_definite(
+            _rewrite_hyperbolics_as_exp(f_), x_, a_, b_, rewrite=False)
 
 
 def _guess_expansion(f, x):
@@ -1803,10 +1810,11 @@ def _guess_expansion(f, x):
         res += [(expanded, 'expand')]
         saw.add(expanded)
 
-    if orig.has(TrigonometricFunction):
+    if orig.has(TrigonometricFunction, HyperbolicFunction):
         expanded = expand_mul(expand_trig(orig))
         if expanded not in saw:
             res += [(expanded, 'expand_trig, expand_mul')]
+            saw.add(expanded)
 
     return res
 
