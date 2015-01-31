@@ -1140,7 +1140,7 @@ def _check_antecedents(g1, g2, x):
     if _eval_cond(r) != False:
         return r
 
-    conds += [And(Eq(t, 0), Eq(phi, 0), m + n > p, s.is_positive is True,
+    conds += [And(Eq(t, 0), Eq(phi, 0), m + n > 0, s.is_positive is True,
         bstar.is_positive is True, cstar.is_negative is True,
         abs(arg(omega)) < (m + n - p + 1)*pi,
         c1, c2, c10, c14, c15)]  # 24
@@ -1172,7 +1172,7 @@ def _check_antecedents(g1, g2, x):
         abs(arg(omega)) < (m + n - q + 1)*pi,
         c1, c3, c10, c14, c15)]  # 29
     pr(29)
-    conds += [And(Eq(n, 0), Eq(phi, 0), s + t > u, m.is_positive is True,
+    conds += [And(Eq(n, 0), Eq(phi, 0), s + t > 0, m.is_positive is True,
         cstar.is_positive is True, bstar.is_negative is True,
         abs(arg(sigma)) < (s + t - u + 1)*pi,
         c1, c2, c12, c14, c15)]  # 30
