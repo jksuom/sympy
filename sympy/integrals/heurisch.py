@@ -558,20 +558,8 @@ def heurisch(f, x, rewrite=False, hints=None, mappings=None, retries=3,
         if solution is None:
             return None
         else:
-            sol = {}
-            # remove coeff from k in case Floats were involved
-            # issue 8901
-            for k, v in solution.items():
-                k, v = k.as_expr(), v.as_expr()
-                if not k.is_Symbol:
-                    if k.is_Mul:
-                        c, k = k.as_coeff_Mul()
-                        v /= c
-                    if not k.is_Symbol:
-                        raise TypeError('unhandled solution key')
-                sol[k] = v
-            return candidate.xreplace(sol).subs(
-                list(zip(coeffs, [S.Zero]*len(coeffs))))
+            solution = [ (k.as_expr().as_coeff_Mul()[1], v.as_expr()) for k, v in solution.items() ]
+            return candidate.subs(solution).subs(list(zip(coeffs, [S.Zero]*len(coeffs))))
 
     if not (F.free_symbols - set(V)):
         solution = _integrate('Q')

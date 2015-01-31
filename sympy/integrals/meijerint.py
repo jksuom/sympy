@@ -28,15 +28,17 @@ The main references for this are:
 from __future__ import print_function, division
 
 from sympy.core import oo, S, pi, Expr
+from sympy.core.exprtools import factor_terms
 from sympy.core.function import expand, expand_mul, expand_power_base
 from sympy.core.add import Add
 from sympy.core.mul import Mul
 from sympy.core.cache import cacheit
 from sympy.core.symbol import Dummy, Wild
-from sympy.simplify import hyperexpand, powdenest
+from sympy.simplify import hyperexpand, powdenest, collect
 from sympy.logic.boolalg import And, Or, BooleanAtom
 from sympy.functions.special.delta_functions import Heaviside
-from sympy.functions.elementary.piecewise import Piecewise
+from sympy.functions.elementary.exponential import exp
+from sympy.functions.elementary.piecewise import Piecewise, piecewise_fold
 from sympy.functions.elementary.hyperbolic import \
     _rewrite_hyperbolics_as_exp, HyperbolicFunction
 from sympy.functions.special.hyper import meijerg
@@ -46,6 +48,15 @@ from sympy.utilities import default_sort_key
 
 # keep this at top for easy reference
 z = Dummy('z')
+
+
+def _has(res, *f):
+    # return True if res has f; in the case of Piecewise
+    # only return True if *all* pieces have f
+    res = piecewise_fold(res)
+    if getattr(res, 'is_Piecewise', False):
+        return all(_has(i, *f) for i in res.args)
+    return res.has(*f)
 
 
 def _create_lookup_table(table):
@@ -358,7 +369,7 @@ def _functions(expr, x):
 
 def _find_splitting_points(expr, x):
     """
-    Find numbers a such that a linear substitution x --> x+a would
+    Find numbers a such that a linear substitution x -> x + a would
     (hopefully) simplify expr.
 
     >>> from sympy.integrals.meijerint import _find_splitting_points as fsp
@@ -1129,59 +1140,69 @@ def _check_antecedents(g1, g2, x):
     if _eval_cond(r) != False:
         return r
 
-    conds += [And(m + n > p, Eq(t, 0), Eq(phi, 0), s.is_positive is True, bstar.is_positive is True, cstar.is_negative is True,
-                  abs(arg(omega)) < (m + n - p + 1)*pi,
-                  c1, c2, c10, c14, c15)]  # 24
+    conds += [And(Eq(t, 0), Eq(phi, 0), m + n > 0, s.is_positive is True,
+        bstar.is_positive is True, cstar.is_negative is True,
+        abs(arg(omega)) < (m + n - p + 1)*pi,
+        c1, c2, c10, c14, c15)]  # 24
     pr(24)
-    conds += [And(m + n > q, Eq(s, 0), Eq(phi, 0), t.is_positive is True, bstar.is_positive is True, cstar.is_negative is True,
-                  abs(arg(omega)) < (m + n - q + 1)*pi,
-                  c1, c3, c10, c14, c15)]  # 25
+    conds += [And(Eq(s, 0), Eq(phi, 0), m + n > q, t.is_positive is True,
+        bstar.is_positive is True, cstar.is_negative is True,
+        abs(arg(omega)) < (m + n - q + 1)*pi,
+        c1, c3, c10, c14, c15)]  # 25
     pr(25)
-    conds += [And(Eq(p, q - 1), Eq(t, 0), Eq(phi, 0), s.is_positive is True, bstar.is_positive is True,
-                  cstar >= 0, cstar*pi < abs(arg(omega)),
-                  c1, c2, c10, c14, c15)]  # 26
+    conds += [And(Eq(p, q - 1), Eq(t, 0), Eq(phi, 0), s.is_positive is True,
+        bstar.is_positive is True,
+        cstar >= 0, cstar*pi < abs(arg(omega)),
+        c1, c2, c10, c14, c15)]  # 26
     pr(26)
-    conds += [And(Eq(p, q + 1), Eq(s, 0), Eq(phi, 0), t.is_positive is True, bstar.is_positive is True,
-                  cstar >= 0, cstar*pi < abs(arg(omega)),
-                  c1, c3, c10, c14, c15)]  # 27
+    conds += [And(Eq(p, q + 1), Eq(s, 0), Eq(phi, 0), t.is_positive is True,
+        bstar.is_positive is True,
+        cstar >= 0, cstar*pi < abs(arg(omega)),
+        c1, c3, c10, c14, c15)]  # 27
     pr(27)
-    conds += [And(p < q - 1, Eq(t, 0), Eq(phi, 0), s.is_positive is True, bstar.is_positive is True,
-                  cstar >= 0, cstar*pi < abs(arg(omega)),
-                  abs(arg(omega)) < (m + n - p + 1)*pi,
-                  c1, c2, c10, c14, c15)]  # 28
+    conds += [And(Eq(t, 0), Eq(phi, 0), p < q - 1, s.is_positive is True,
+        bstar.is_positive is True,
+        cstar >= 0, cstar*pi < abs(arg(omega)),
+        abs(arg(omega)) < (m + n - p + 1)*pi,
+        c1, c2, c10, c14, c15)]  # 28
     pr(28)
-    conds += [And(
-        p > q + 1, Eq(s, 0), Eq(phi, 0), t.is_positive is True, bstar.is_positive is True, cstar >= 0,
-                  cstar*pi < abs(arg(omega)),
-                  abs(arg(omega)) < (m + n - q + 1)*pi,
-                  c1, c3, c10, c14, c15)]  # 29
+    conds += [And(Eq(s, 0), Eq(phi, 0), p > q + 1, t.is_positive is True,
+        bstar.is_positive is True, cstar >= 0,
+        cstar*pi < abs(arg(omega)),
+        abs(arg(omega)) < (m + n - q + 1)*pi,
+        c1, c3, c10, c14, c15)]  # 29
     pr(29)
-    conds += [And(Eq(n, 0), Eq(phi, 0), s + t > 0, m.is_positive is True, cstar.is_positive is True, bstar.is_negative is True,
-                  abs(arg(sigma)) < (s + t - u + 1)*pi,
-                  c1, c2, c12, c14, c15)]  # 30
+    conds += [And(Eq(n, 0), Eq(phi, 0), s + t > 0, m.is_positive is True,
+        cstar.is_positive is True, bstar.is_negative is True,
+        abs(arg(sigma)) < (s + t - u + 1)*pi,
+        c1, c2, c12, c14, c15)]  # 30
     pr(30)
-    conds += [And(Eq(m, 0), Eq(phi, 0), s + t > v, n.is_positive is True, cstar.is_positive is True, bstar.is_negative is True,
-                  abs(arg(sigma)) < (s + t - v + 1)*pi,
-                  c1, c3, c12, c14, c15)]  # 31
+    conds += [And(Eq(m, 0), Eq(phi, 0), s + t > v, n.is_positive is True,
+        cstar.is_positive is True, bstar.is_negative is True,
+        abs(arg(sigma)) < (s + t - v + 1)*pi,
+        c1, c3, c12, c14, c15)]  # 31
     pr(31)
-    conds += [And(Eq(n, 0), Eq(phi, 0), Eq(u, v - 1), m.is_positive is True, cstar.is_positive is True,
-                  bstar >= 0, bstar*pi < abs(arg(sigma)),
-                  abs(arg(sigma)) < (bstar + 1)*pi,
-                  c1, c2, c12, c14, c15)]  # 32
+    conds += [And(Eq(n, 0), Eq(phi, 0), Eq(u, v - 1), m.is_positive is True,
+        cstar.is_positive is True,
+        bstar >= 0, bstar*pi < abs(arg(sigma)),
+        abs(arg(sigma)) < (bstar + 1)*pi,
+        c1, c2, c12, c14, c15)]  # 32
     pr(32)
-    conds += [And(Eq(m, 0), Eq(phi, 0), Eq(u, v + 1), n.is_positive is True, cstar.is_positive is True,
-                  bstar >= 0, bstar*pi < abs(arg(sigma)),
-                  abs(arg(sigma)) < (bstar + 1)*pi,
-                  c1, c3, c12, c14, c15)]  # 33
+    conds += [And(Eq(m, 0), Eq(phi, 0), Eq(u, v + 1), n.is_positive is True,
+        cstar.is_positive is True,
+        bstar >= 0, bstar*pi < abs(arg(sigma)),
+        abs(arg(sigma)) < (bstar + 1)*pi,
+        c1, c3, c12, c14, c15)]  # 33
     pr(33)
-    conds += [And(
-        Eq(n, 0), Eq(phi, 0), u < v - 1, m.is_positive is True, cstar.is_positive is True, bstar >= 0,
-        bstar*pi < abs(arg(sigma)),
+    conds += [And(Eq(n, 0), Eq(phi, 0), u < v - 1, m.is_positive is True,
+        cstar.is_positive is True,
+        bstar >= 0, bstar*pi < abs(arg(sigma)),
         abs(arg(sigma)) < (s + t - u + 1)*pi,
         c1, c2, c12, c14, c15)]  # 34
     pr(34)
     conds += [And(
-        Eq(m, 0), Eq(phi, 0), u > v + 1, n.is_positive is True, cstar.is_positive is True, bstar >= 0,
+        Eq(m, 0), Eq(phi, 0), u > v + 1, n.is_positive is True,
+        cstar.is_positive is True, bstar >= 0,
         bstar*pi < abs(arg(sigma)),
         abs(arg(sigma)) < (s + t - v + 1)*pi,
         c1, c3, c12, c14, c15)]  # 35
@@ -1189,7 +1210,7 @@ def _check_antecedents(g1, g2, x):
 
     return Or(*conds)
 
-    # NOTE An alternative, but as far as I can tell weaker, set of conditions
+    # NOTE An alternative, but (as far as I can tell) weaker set of conditions
     #      can be found in [L, section 5.6.2].
 
 
@@ -1570,11 +1591,21 @@ def meijerint_indefinite(f, x, rewrite=True):
     results = []
     for a in sorted(_find_splitting_points(f, x) | set([S(0)]), key=default_sort_key):
         res = _meijerint_indefinite_1(f.subs(x, x + a), x)
-        if res is None:
+        if not res:
             continue
-        results.append(res.subs(x, x - a))
-        if not res.has(hyper, meijerg):
-            return results[-1]
+        res = res.subs(x, x - a)
+        if _has(res, hyper, meijerg):
+            results.append(res)
+        else:
+            return res
+    if f.has(HyperbolicFunction):
+        _debug('Try rewriting hyperbolics in terms of exp.')
+        rv = meijerint_indefinite(
+            _rewrite_hyperbolics_as_exp(f), x)
+        if rv:
+            if not type(rv) is list:
+                return collect(factor_terms(rv), rv.atoms(exp))
+            results.extend(rv)
     if results:
         return next(ordered(results))
     if rewrite and f.has(HyperbolicFunction):
@@ -1713,6 +1744,7 @@ def meijerint_definite(f, x, a, b, rewrite=True):
     if a == b:
         return (S.Zero, True)
 
+    results = []
     if a == -oo and b != oo:
         return meijerint_definite(f.subs(x, -x), x, -b, -a)
 
@@ -1749,19 +1781,21 @@ def meijerint_definite(f, x, a, b, rewrite=True):
     elif (a, b) == (0, oo):
         # This is a common case - try it directly first.
         res = _meijerint_definite_2(f, x)
-        if res is not None and not res[0].has(meijerg):
-            return res
+        if res:
+            if _has(res[0], meijerg):
+                results.append(res)
+            else:
+                return res
 
     else:
-        results = []
         if b == oo:
             for split in _find_splitting_points(f, x):
                 if (a - split >= 0) == True:
-                    _debug('Trying x --> x + %s' % split)
+                    _debug('Trying x -> x + %s' % split)
                     res = _meijerint_definite_2(f.subs(x, x + split)
                                                 *Heaviside(x + split - a), x)
-                    if res is not None:
-                        if res[0].has(meijerg):
+                    if res:
+                        if _has(res[0], meijerg):
                             results.append(res)
                         else:
                             return res
@@ -1779,17 +1813,22 @@ def meijerint_definite(f, x, a, b, rewrite=True):
         _debug('Changed limits to', a, b)
         _debug('Changed function to', f)
         res = _meijerint_definite_2(f, x)
-        if res is not None:
-            if res[0].has(meijerg):
+        if res:
+            if _has(res[0], meijerg):
                 results.append(res)
             else:
                 return res
-        if results:
-            return sorted(results, key=lambda x: count_ops(x[0]))[0]
-    if rewrite and f_.has(HyperbolicFunction):
+    if f_.has(HyperbolicFunction):
         _debug('Try rewriting hyperbolics in terms of exp.')
-        return meijerint_definite(
-            _rewrite_hyperbolics_as_exp(f_), x_, a_, b_, rewrite=False)
+        rv = meijerint_definite(
+            _rewrite_hyperbolics_as_exp(f_), x_, a_, b_)
+        if rv:
+            if not type(rv) is list:
+                rv = (collect(factor_terms(rv[0]), rv[0].atoms(exp)),) + rv[1:]
+                return rv
+            results.extend(rv)
+    if results:
+        return next(ordered(results)) # XXX sorted(results, key=lambda x: count_ops(x[0]))[0]
 
 
 def _guess_expansion(f, x):
@@ -1857,7 +1896,7 @@ def _meijerint_definite_3(f, x):
     integral. If this fails, it tries using linearity.
     """
     res = _meijerint_definite_4(f, x)
-    if res is not None and res[1] != False:
+    if res and res[1] != False:
         return res
     if f.is_Add:
         _debug('Expanding and evaluating all terms.')

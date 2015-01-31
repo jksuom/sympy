@@ -638,7 +638,4 @@ def test_issue_6860():
 
 def test_issue_8368():
     assert meijerint_indefinite(cosh(x)*exp(-x*t), x) == (
-        -t*exp(2*x)/(2*t**2*exp(x)*exp(t*x) - 2*exp(x)*exp(t*x)) -
-        t/(2*t**2*exp(x)*exp(t*x) - 2*exp(x)*exp(t*x)) -
-        exp(2*x)/(2*t**2*exp(x)*exp(t*x) - 2*exp(x)*exp(t*x)) +
-        1/(2*t**2*exp(x)*exp(t*x) - 2*exp(x)*exp(t*x)))
+        (-t - 1)*exp(x) + (-t + 1)*exp(-x))*exp(-t*x)/2/(t**2 - 1)
