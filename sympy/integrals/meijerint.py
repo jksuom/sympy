@@ -1140,59 +1140,69 @@ def _check_antecedents(g1, g2, x):
     if _eval_cond(r) != False:
         return r
 
-    conds += [And(m + n > p, Eq(t, 0), Eq(phi, 0), s.is_positive is True, bstar.is_positive is True, cstar.is_negative is True,
-                  abs(arg(omega)) < (m + n - p + 1)*pi,
-                  c1, c2, c10, c14, c15)]  # 24
+    conds += [And(Eq(t, 0), Eq(phi, 0), m + n > p, s.is_positive is True,
+        bstar.is_positive is True, cstar.is_negative is True,
+        abs(arg(omega)) < (m + n - p + 1)*pi,
+        c1, c2, c10, c14, c15)]  # 24
     pr(24)
-    conds += [And(m + n > q, Eq(s, 0), Eq(phi, 0), t.is_positive is True, bstar.is_positive is True, cstar.is_negative is True,
-                  abs(arg(omega)) < (m + n - q + 1)*pi,
-                  c1, c3, c10, c14, c15)]  # 25
+    conds += [And(Eq(s, 0), Eq(phi, 0), m + n > q, t.is_positive is True,
+        bstar.is_positive is True, cstar.is_negative is True,
+        abs(arg(omega)) < (m + n - q + 1)*pi,
+        c1, c3, c10, c14, c15)]  # 25
     pr(25)
-    conds += [And(Eq(p, q - 1), Eq(t, 0), Eq(phi, 0), s.is_positive is True, bstar.is_positive is True,
-                  cstar >= 0, cstar*pi < abs(arg(omega)),
-                  c1, c2, c10, c14, c15)]  # 26
+    conds += [And(Eq(p, q - 1), Eq(t, 0), Eq(phi, 0), s.is_positive is True,
+        bstar.is_positive is True,
+        cstar >= 0, cstar*pi < abs(arg(omega)),
+        c1, c2, c10, c14, c15)]  # 26
     pr(26)
-    conds += [And(Eq(p, q + 1), Eq(s, 0), Eq(phi, 0), t.is_positive is True, bstar.is_positive is True,
-                  cstar >= 0, cstar*pi < abs(arg(omega)),
-                  c1, c3, c10, c14, c15)]  # 27
+    conds += [And(Eq(p, q + 1), Eq(s, 0), Eq(phi, 0), t.is_positive is True,
+        bstar.is_positive is True,
+        cstar >= 0, cstar*pi < abs(arg(omega)),
+        c1, c3, c10, c14, c15)]  # 27
     pr(27)
-    conds += [And(p < q - 1, Eq(t, 0), Eq(phi, 0), s.is_positive is True, bstar.is_positive is True,
-                  cstar >= 0, cstar*pi < abs(arg(omega)),
-                  abs(arg(omega)) < (m + n - p + 1)*pi,
-                  c1, c2, c10, c14, c15)]  # 28
+    conds += [And(Eq(t, 0), Eq(phi, 0), p < q - 1, s.is_positive is True,
+        bstar.is_positive is True,
+        cstar >= 0, cstar*pi < abs(arg(omega)),
+        abs(arg(omega)) < (m + n - p + 1)*pi,
+        c1, c2, c10, c14, c15)]  # 28
     pr(28)
-    conds += [And(
-        p > q + 1, Eq(s, 0), Eq(phi, 0), t.is_positive is True, bstar.is_positive is True, cstar >= 0,
-                  cstar*pi < abs(arg(omega)),
-                  abs(arg(omega)) < (m + n - q + 1)*pi,
-                  c1, c3, c10, c14, c15)]  # 29
+    conds += [And(Eq(s, 0), Eq(phi, 0), p > q + 1, t.is_positive is True,
+        bstar.is_positive is True, cstar >= 0,
+        cstar*pi < abs(arg(omega)),
+        abs(arg(omega)) < (m + n - q + 1)*pi,
+        c1, c3, c10, c14, c15)]  # 29
     pr(29)
-    conds += [And(Eq(n, 0), Eq(phi, 0), s + t > 0, m.is_positive is True, cstar.is_positive is True, bstar.is_negative is True,
-                  abs(arg(sigma)) < (s + t - u + 1)*pi,
-                  c1, c2, c12, c14, c15)]  # 30
+    conds += [And(Eq(n, 0), Eq(phi, 0), s + t > u, m.is_positive is True,
+        cstar.is_positive is True, bstar.is_negative is True,
+        abs(arg(sigma)) < (s + t - u + 1)*pi,
+        c1, c2, c12, c14, c15)]  # 30
     pr(30)
-    conds += [And(Eq(m, 0), Eq(phi, 0), s + t > v, n.is_positive is True, cstar.is_positive is True, bstar.is_negative is True,
-                  abs(arg(sigma)) < (s + t - v + 1)*pi,
-                  c1, c3, c12, c14, c15)]  # 31
+    conds += [And(Eq(m, 0), Eq(phi, 0), s + t > v, n.is_positive is True,
+        cstar.is_positive is True, bstar.is_negative is True,
+        abs(arg(sigma)) < (s + t - v + 1)*pi,
+        c1, c3, c12, c14, c15)]  # 31
     pr(31)
-    conds += [And(Eq(n, 0), Eq(phi, 0), Eq(u, v - 1), m.is_positive is True, cstar.is_positive is True,
-                  bstar >= 0, bstar*pi < abs(arg(sigma)),
-                  abs(arg(sigma)) < (bstar + 1)*pi,
-                  c1, c2, c12, c14, c15)]  # 32
+    conds += [And(Eq(n, 0), Eq(phi, 0), Eq(u, v - 1), m.is_positive is True,
+        cstar.is_positive is True,
+        bstar >= 0, bstar*pi < abs(arg(sigma)),
+        abs(arg(sigma)) < (bstar + 1)*pi,
+        c1, c2, c12, c14, c15)]  # 32
     pr(32)
-    conds += [And(Eq(m, 0), Eq(phi, 0), Eq(u, v + 1), n.is_positive is True, cstar.is_positive is True,
-                  bstar >= 0, bstar*pi < abs(arg(sigma)),
-                  abs(arg(sigma)) < (bstar + 1)*pi,
-                  c1, c3, c12, c14, c15)]  # 33
+    conds += [And(Eq(m, 0), Eq(phi, 0), Eq(u, v + 1), n.is_positive is True,
+        cstar.is_positive is True,
+        bstar >= 0, bstar*pi < abs(arg(sigma)),
+        abs(arg(sigma)) < (bstar + 1)*pi,
+        c1, c3, c12, c14, c15)]  # 33
     pr(33)
-    conds += [And(
-        Eq(n, 0), Eq(phi, 0), u < v - 1, m.is_positive is True, cstar.is_positive is True, bstar >= 0,
-        bstar*pi < abs(arg(sigma)),
+    conds += [And(Eq(n, 0), Eq(phi, 0), u < v - 1, m.is_positive is True,
+        cstar.is_positive is True,
+        bstar >= 0, bstar*pi < abs(arg(sigma)),
         abs(arg(sigma)) < (s + t - u + 1)*pi,
         c1, c2, c12, c14, c15)]  # 34
     pr(34)
     conds += [And(
-        Eq(m, 0), Eq(phi, 0), u > v + 1, n.is_positive is True, cstar.is_positive is True, bstar >= 0,
+        Eq(m, 0), Eq(phi, 0), u > v + 1, n.is_positive is True,
+        cstar.is_positive is True, bstar >= 0,
         bstar*pi < abs(arg(sigma)),
         abs(arg(sigma)) < (s + t - v + 1)*pi,
         c1, c3, c12, c14, c15)]  # 35
@@ -1200,7 +1210,7 @@ def _check_antecedents(g1, g2, x):
 
     return Or(*conds)
 
-    # NOTE An alternative, but as far as I can tell weaker, set of conditions
+    # NOTE An alternative, but (as far as I can tell) weaker set of conditions
     #      can be found in [L, section 5.6.2].
 
 
